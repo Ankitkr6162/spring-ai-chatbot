@@ -31,7 +31,16 @@ public class ChatbotController {
 
     @GetMapping("/health")
     public ResponseEntity<Map<String, String>> health() {
-        return ResponseEntity.ok(Map.of("status", "UP", "service", "AI Chatbot"));
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "service", "AI Chatbot",
+                "documents", chatbotService.getDocumentsInfo()
+        ));
+    }
+
+    @GetMapping("/info")
+    public ResponseEntity<String> info() {
+        return ResponseEntity.ok(chatbotService.getDocumentsInfo());
     }
 }
 
