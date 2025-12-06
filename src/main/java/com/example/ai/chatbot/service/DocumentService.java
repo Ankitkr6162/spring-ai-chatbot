@@ -1,4 +1,4 @@
-package com.example.ai.chatbot.controller;
+package com.example.ai.chatbot.service;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.ExtractedTextFormatter;
