@@ -46,82 +46,82 @@ public class ChatbotService {
         this.vectorStore = vectorStore;
     }
 
-    @PostConstruct
-    public void init() {
-        loadAllDocuments();
-    }
-
-    private void loadAllDocuments() {
-        try {
-            ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
-            List<Document> allDocuments = new ArrayList<>();
-
-            // Load all .txt files
-            Resource[] textResources = resolver.getResources(documentsFolder + "*.txt");
-            System.out.println("Found " + textResources.length + " text files");
-
-            for (Resource resource : textResources) {
-                try {
-                    System.out.println("Loading: " + resource.getFilename());
-                    TextReader textReader = new TextReader(resource);
-                    List<Document> docs = textReader.get();
-
-                    // Add metadata about the source file
-                    docs.forEach(doc -> doc.getMetadata().put("source", resource.getFilename()));
-                    allDocuments.addAll(docs);
-                    totalDocumentsLoaded++;
-                } catch (Exception e) {
-                    System.err.println("Error loading " + resource.getFilename() + ": " + e.getMessage());
-                }
-            }
-
-            // Load all .pdf files
-            Resource[] pdfResources = resolver.getResources(documentsFolder + "*.pdf");
-            System.out.println("Found " + pdfResources.length + " PDF files");
-
-            for (Resource resource : pdfResources) {
-                try {
-                    System.out.println("Loading: " + resource.getFilename());
-                    PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(resource);
-                    List<Document> docs = pdfReader.get();
-
-                    // Add metadata about the source file
-                    docs.forEach(doc -> doc.getMetadata().put("source", resource.getFilename()));
-                    allDocuments.addAll(docs);
-                    totalDocumentsLoaded++;
-                } catch (Exception e) {
-                    System.err.println("Error loading " + resource.getFilename() + ": " + e.getMessage());
-                }
-            }
-
-            if (allDocuments.isEmpty()) {
-                System.err.println("WARNING: No documents found in " + documentsFolder);
-                allDocumentsContent = "";
-                return;
-            }
-
-            // Split all documents into chunks
-            TokenTextSplitter splitter = new TokenTextSplitter(chunkSize, chunkOverlap, 5, 10000, true);
-            List<Document> chunks = splitter.apply(allDocuments);
-
-            // Store all chunks in vector store
-            vectorStore.add(chunks);
-
-            // Keep full content for simple mode
-            allDocumentsContent = allDocuments.stream()
-                    .map(doc -> {
-                        String source = (String) doc.getMetadata().get("source");
-                        return "--- From: " + source + " ---\n" + doc.getContent();
-                    })
-                    .collect(Collectors.joining("\n\n"));
-
-            System.out.println("✅ Successfully loaded " + totalDocumentsLoaded + " documents with " + chunks.size() + " chunks");
-
-        } catch (IOException e) {
-            System.err.println("Error loading documents: " + e.getMessage());
-            allDocumentsContent = "";
-        }
-    }
+//    @PostConstruct
+//    public void init() {
+//        loadAllDocuments();
+//    }
+//
+//    private void loadAllDocuments() {
+//        try {
+//            ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+//            List<Document> allDocuments = new ArrayList<>();
+//
+//            // Load all .txt files
+//            Resource[] textResources = resolver.getResources(documentsFolder + "*.txt");
+//            System.out.println("Found " + textResources.length + " text files");
+//
+//            for (Resource resource : textResources) {
+//                try {
+//                    System.out.println("Loading: " + resource.getFilename());
+//                    TextReader textReader = new TextReader(resource);
+//                    List<Document> docs = textReader.get();
+//
+//                    // Add metadata about the source file
+//                    docs.forEach(doc -> doc.getMetadata().put("source", resource.getFilename()));
+//                    allDocuments.addAll(docs);
+//                    totalDocumentsLoaded++;
+//                } catch (Exception e) {
+//                    System.err.println("Error loading " + resource.getFilename() + ": " + e.getMessage());
+//                }
+//            }
+//
+//            // Load all .pdf files
+//            Resource[] pdfResources = resolver.getResources(documentsFolder + "*.pdf");
+//            System.out.println("Found " + pdfResources.length + " PDF files");
+//
+//            for (Resource resource : pdfResources) {
+//                try {
+//                    System.out.println("Loading: " + resource.getFilename());
+//                    PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(resource);
+//                    List<Document> docs = pdfReader.get();
+//
+//                    // Add metadata about the source file
+//                    docs.forEach(doc -> doc.getMetadata().put("source", resource.getFilename()));
+//                    allDocuments.addAll(docs);
+//                    totalDocumentsLoaded++;
+//                } catch (Exception e) {
+//                    System.err.println("Error loading " + resource.getFilename() + ": " + e.getMessage());
+//                }
+//            }
+//
+//            if (allDocuments.isEmpty()) {
+//                System.err.println("WARNING: No documents found in " + documentsFolder);
+//                allDocumentsContent = "";
+//                return;
+//            }
+//
+//            // Split all documents into chunks
+//            TokenTextSplitter splitter = new TokenTextSplitter(chunkSize, chunkOverlap, 5, 10000, true);
+//            List<Document> chunks = splitter.apply(allDocuments);
+//
+//            // Store all chunks in vector store
+//            vectorStore.add(chunks);
+//
+//            // Keep full content for simple mode
+//            allDocumentsContent = allDocuments.stream()
+//                    .map(doc -> {
+//                        String source = (String) doc.getMetadata().get("source");
+//                        return "--- From: " + source + " ---\n" + doc.getContent();
+//                    })
+//                    .collect(Collectors.joining("\n\n"));
+//
+//            System.out.println("Successfully loaded " + totalDocumentsLoaded + " documents with " + chunks.size() + " chunks");
+//
+//        } catch (IOException e) {
+//            System.err.println("Error loading documents: " + e.getMessage());
+//            allDocumentsContent = "";
+//        }
+//    }
 
     public String chat(String userQuestion) {
         // Retrieve relevant document chunks from ALL documents
@@ -158,30 +158,30 @@ public class ChatbotService {
         return chatClient.prompt(prompt).call().content();
     }
 
-    public String chatSimple(String userQuestion) {
-        if (allDocumentsContent.isEmpty()) {
-            return "No documents have been loaded. Please add documents to the data folder.";
-        }
+//    public String chatSimple(String userQuestion) {
+//        if (allDocumentsContent.isEmpty()) {
+//            return "No documents have been loaded. Please add documents to the data folder.";
+//        }
+//
+//        String systemPrompt = """
+//            You are a helpful assistant. Use the following information from multiple documents to answer the user's question.
+//            Each section shows which document it comes from.
+//            If the answer cannot be found in the information provided, say so politely.
+//
+//            Information:
+//            {document}
+//            """;
+//
+//        SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(systemPrompt);
+//        Message systemMessage = systemPromptTemplate.createMessage(Map.of("document", allDocumentsContent));
+//
+//        UserMessage userMessage = new UserMessage(userQuestion);
+//        Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
+//
+//        return chatClient.prompt(prompt).call().content();
+//    }
 
-        String systemPrompt = """
-            You are a helpful assistant. Use the following information from multiple documents to answer the user's question.
-            Each section shows which document it comes from.
-            If the answer cannot be found in the information provided, say so politely.
-            
-            Information:
-            {document}
-            """;
-
-        SystemPromptTemplate systemPromptTemplate = new SystemPromptTemplate(systemPrompt);
-        Message systemMessage = systemPromptTemplate.createMessage(Map.of("document", allDocumentsContent));
-
-        UserMessage userMessage = new UserMessage(userQuestion);
-        Prompt prompt = new Prompt(List.of(systemMessage, userMessage));
-
-        return chatClient.prompt(prompt).call().content();
-    }
-
-    public String getDocumentsInfo() {
-        return "Loaded " + totalDocumentsLoaded + " documents from " + documentsFolder;
-    }
+//    public String getDocumentsInfo() {
+//        return "Loaded " + totalDocumentsLoaded + " documents from " + documentsFolder;
+//    }
 }
