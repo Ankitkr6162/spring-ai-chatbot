@@ -119,6 +119,7 @@ public class DocumentService {
         return false;
     }
 
+    // not using now
     public void reloadAllDocuments() throws IOException {
         List<String> files = listDocuments();
 

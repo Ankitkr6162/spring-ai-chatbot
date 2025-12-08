@@ -7,7 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -46,39 +48,111 @@ public class ChatbotController {
 //    }
 
 
+//    @PostMapping("/upload")
+//    public ResponseEntity<Map<String, Object>> uploadDocument(@RequestParam("file") MultipartFile file) {
+//
+//        Map<String, Object> response = new HashMap<>();
+//
+//        try {
+//            // Validate file
+//            if (file.isEmpty()) {
+//                response.put("success", false);
+//                response.put("message", "Please select a file to upload");
+//                return ResponseEntity.badRequest().body(response);
+//            }
+//
+//            // Validate file type
+//            String contentType = file.getContentType();
+//            if (!isValidFileType(contentType)) {
+//                response.put("success", false);
+//                response.put("message", "Only PDF and TXT files are allowed");
+//                return ResponseEntity.badRequest().body(response);
+//            }
+//
+//            // Process and save the document
+//            String fileName = documentService.saveAndProcessDocument(file);
+//
+//            response.put("success", true);
+//            response.put("message", "File uploaded and processed successfully");
+//            response.put("fileName", fileName);
+//
+//            return ResponseEntity.ok(response);
+//
+//        } catch (Exception e) {
+//            response.put("success", false);
+//            response.put("message", "Error uploading file: " + e.getMessage());
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+//        }
+//    }
+
     @PostMapping("/upload")
-    public ResponseEntity<Map<String, Object>> uploadDocument(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, Object>> uploadDocument(@RequestParam("files") MultipartFile[] files) {
 
         Map<String, Object> response = new HashMap<>();
+        List<String> uploadedFiles = new ArrayList<>();
+        List<String> failedFiles = new ArrayList<>();
 
         try {
-            // Validate file
-            if (file.isEmpty()) {
+            // Validate if files are provided
+            if (files == null || files.length == 0) {
                 response.put("success", false);
-                response.put("message", "Please select a file to upload");
+                response.put("message", "Please select at least one file to upload");
                 return ResponseEntity.badRequest().body(response);
             }
 
-            // Validate file type
-            String contentType = file.getContentType();
-            if (!isValidFileType(contentType)) {
-                response.put("success", false);
-                response.put("message", "Only PDF and TXT files are allowed");
-                return ResponseEntity.badRequest().body(response);
+            // Process each file
+            for (MultipartFile file : files) {
+                try {
+                    // Skip empty files
+                    if (file.isEmpty()) {
+                        failedFiles.add(file.getOriginalFilename() + " (empty file)");
+                        continue;
+                    }
+
+                    // Validate file type
+                    String contentType = file.getContentType();
+                    if (!isValidFileType(contentType)) {
+                        failedFiles.add(file.getOriginalFilename() + " (invalid file type)");
+                        continue;
+                    }
+
+                    // Process and save the document
+                    String fileName = documentService.saveAndProcessDocument(file);
+                    uploadedFiles.add(fileName);
+
+                } catch (Exception e) {
+                    failedFiles.add(file.getOriginalFilename() + " (" + e.getMessage() + ")");
+                }
             }
 
-            // Process and save the document
-            String fileName = documentService.saveAndProcessDocument(file);
+            // Prepare response
+            boolean allSuccess = failedFiles.isEmpty();
+            boolean partialSuccess = !uploadedFiles.isEmpty() && !failedFiles.isEmpty();
 
-            response.put("success", true);
-            response.put("message", "File uploaded and processed successfully");
-            response.put("fileName", fileName);
+            response.put("success", allSuccess);
+            response.put("uploadedFiles", uploadedFiles);
+            response.put("uploadedCount", uploadedFiles.size());
 
-            return ResponseEntity.ok(response);
+            if (!failedFiles.isEmpty()) {
+                response.put("failedFiles", failedFiles);
+                response.put("failedCount", failedFiles.size());
+            }
+
+            if (allSuccess) {
+                response.put("message", uploadedFiles.size() + " file(s) uploaded and processed successfully");
+                return ResponseEntity.ok(response);
+            } else if (partialSuccess) {
+                response.put("message", uploadedFiles.size() + " file(s) uploaded successfully, " +
+                        failedFiles.size() + " failed");
+                return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(response);
+            } else {
+                response.put("message", "All files failed to upload");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
 
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "Error uploading file: " + e.getMessage());
+            response.put("message", "Error uploading files: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }

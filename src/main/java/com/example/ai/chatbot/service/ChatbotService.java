@@ -45,7 +45,7 @@ public class ChatbotService {
         this.chatClient = chatClientBuilder.build();
         this.vectorStore = vectorStore;
     }
-
+//
 //    @PostConstruct
 //    public void init() {
 //        loadAllDocuments();
